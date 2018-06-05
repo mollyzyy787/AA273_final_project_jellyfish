@@ -34,4 +34,4 @@ filtered_x = ifft(filtered_X*N);
 
 figure;
 plot(t,filtered_x,'r-',t,orig_X,'b-')
-legend('filtered x','original x')
+legend('filtered volume','original volume')
