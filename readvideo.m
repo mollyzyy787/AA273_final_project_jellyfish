@@ -1,4 +1,4 @@
-%close all; clear all; clc;
+close all; clear all; clc;
 
 threshPercent = 99;
 v = VideoReader('jelly_movie_trim.mp4');
@@ -10,8 +10,8 @@ width_history = zeros(1,500);
 particle_location = zeros(2,500);
 flow_velocity_history = zeros(2,499);
 
-% M2 = VideoWriter('particle.avi');
-% open(M2);
+M = VideoWriter('jelly_binary_new.avi');
+open(M);
 for i = 1:500
     img_ori = read(v,i);
     img = double(img_ori);
@@ -30,23 +30,28 @@ for i = 1:500
         centroids(j,:)=s(j).Centroid;
     end
     [Area,Ind]=sort(areas,'descend'); 
-%     imshow(bi_top);
-%     hold on;
-%     rectangle('Position',[boundingbox(Ind(1),:)],'EdgeColor','r', 'LineWidth', 2);hold on;
-%     plot(centroids(Ind(1),1), centroids(Ind(1),2), 'r.','LineWidth',16); 
-%     axis off
-%     drawnow;
-%     currFrame = getframe;
-%     writeVideo(M,currFrame);
-    location(:,i)=centroids(Ind(1),:);
-    area_history(i) = Area(Ind(1));
-    height_history(i) = boundingbox(Ind(1),4);
-    width_history(i) = boundingbox(Ind(1),3);
-    new_im = bi_top;         
     xmin = floor(boundingbox(Ind(1),1));
     ymin = floor(boundingbox(Ind(1),2));
     width = floor(boundingbox(Ind(1),3));
     height = floor(boundingbox(Ind(1),4));
+    for k=1:height
+        if sum(bi_top(ymin+k,xmin:xmin+width-1))>=width*0.25
+            break
+        end
+    end
+    imshow(bi_top);
+    hold on;
+    rectangle('Position',[xmin,ymin+k,width,height-k],'EdgeColor','r', 'LineWidth', 2);hold on;
+    plot(centroids(Ind(1),1), centroids(Ind(1),2), 'r.','LineWidth',16); 
+    axis off
+    drawnow;
+    currFrame = getframe;
+    writeVideo(M,currFrame);
+    location(:,i)=centroids(Ind(1),:);
+    area_history(i) = max(areas);
+    height_history(i) = height-k;
+    width_history(i) = width;
+    new_im = bi_top;         
     new_im(ymin:ymin+height-1,xmin:xmin+width-1)=...
         zeros(height,width);
     big_bb = zeros(4,1);
@@ -66,14 +71,14 @@ for i = 1:500
     yc = sum(new_centroids(:,2))/length(new_centroids(:,1))+big_bb(2);
     particle_location(1,i) = xc;
     particle_location(2,i) = yc;
-    imshow(new_im)
-    rectangle('Position',big_bb,'EdgeColor','g', 'LineWidth', 2);hold on;
-    plot(new_centroids(:,1)+big_bb(1), new_centroids(:,2)+big_bb(2), 'r.','LineWidth',16)
-    plot(xc,yc,'bo','LineWidth',4)
+%     imshow(new_im)
+%     rectangle('Position',big_bb,'EdgeColor','g', 'LineWidth', 2);hold on;
+%     plot(new_centroids(:,1)+big_bb(1), new_centroids(:,2)+big_bb(2), 'r.','LineWidth',16)
+%     plot(xc,yc,'bo','LineWidth',4)
 %     currFrame = getframe;
 %     writeVideo(M2,currFrame);
 end
-%close(M2);
+close(M);
 
 
 %%
@@ -82,7 +87,7 @@ for i = 2:col_flowV
     flow_velocity_history(1,i) = particle_location(1,i)-particle_location(1,i-1);
     flow_velocity_history(2,i) = particle_location(2,i)-particle_location(2,i-1);
 end
-
+%%
 filtered_vpx = flow_velocity_history(1,:);
 filtered_vpy = flow_velocity_history(2,:);
 
@@ -94,7 +99,7 @@ figure;
 plot(filtered_vpx)
 figure;
 plot(filtered_vpy)
- 
+ %%
 for i=1:length(location(1,:))
     plot(location(1,i),-location(2,i),'.');hold on;
     title('jellyfish trajectory measurement');
